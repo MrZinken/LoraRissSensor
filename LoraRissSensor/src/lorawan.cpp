@@ -9,12 +9,10 @@
  * RGB green means received done;
  */
 
-
-
 /* OTAA para */
-uint8_t devEui[] = {0xAB, 0xEE, 0xFF, 0x05, 0x55, 0xDC, 0xB3, 0x72};
-uint8_t appEui[] = {0xED, 0x22, 0x23, 0x42, 0xEF, 0xCD, 0xBB, 0x22};
-uint8_t appKey[] = {0x1F, 0x53, 0x74, 0xF1, 0x98, 0x1F, 0x31, 0x21, 0x2C, 0xB9, 0xDE, 0xFB, 0xE9, 0x1F, 0x8A, 0x14};
+uint8_t devEui[] = {0x14, 0x24, 0x3A, 0xBC, 0x23, 0x55, 0x43, 0x63};
+uint8_t appEui[] = {0xAB, 0xAB, 0xAB, 0xAB, 0x14, 0xB1, 0x34, 0xB1};
+uint8_t appKey[] = {0x14, 0x2A, 0xC6, 0x43, 0x6B, 0xFD, 0xED, 0xEB, 0xFE, 0xFE, 0xBC, 0xA4, 0x22, 0x35, 0x45, 0x73};
 /* ABP para*/
 uint8_t nwkSKey[] = {0x15, 0xb1, 0xd0, 0xef, 0xa4, 0x63, 0xdf, 0xbe, 0x3d, 0x11, 0x18, 0x1e, 0x1e, 0xc7, 0xda, 0x85};
 uint8_t appSKey[] = {0xd7, 0x2c, 0x78, 0x75, 0x8c, 0xdc, 0xca, 0xbf, 0x55, 0xee, 0x4a, 0x77, 0x8d, 0x16, 0xef, 0x67};
@@ -43,6 +41,8 @@ bool keepNet = false;
 
 /* Indicates if the node is sending confirmed or unconfirmed messages */
 bool isTxConfirmed = false;
+
+bool lorawan_send = true;
 
 // Application port
 uint8_t appPort = 2;
@@ -87,36 +87,33 @@ void prepareTxFrame(uint8_t port)
      *the max value for different DR can be found in MaxPayloadOfDatarateCN470 refer to DataratesCN470 and BandwidthsCN470 in "RegionCN470.h".
      */
     digitalWrite(Vext, LOW); // Enable Vext
-    delay(500); // Wait for voltage to stabilize
+    delay(50);               // Wait for voltage to stabilize
     Wire.begin();
     Wire.setClock(400000); // Increase to fast I2C speed!
 
-    if(initLinearSensor()){
+    if (initLinearSensor())
+    {
         debug_println("Sensor setup done!");
     }
-    else{
+    else
+    {
         debug_println("BME not initialized.");
     }
-    uint16_t distance = readLinearSensor();
+    uint8_t adc_distance = readLinearSensor_8();
 
     uint8_t battery = getBatteryLevel();
-    
 
     digitalWrite(Vext, HIGH); // Disable Vext
 
-
-
-
-    debug_print("Distance: ");
-    debug_println(distance);
+    debug_print("ADC: ");
+    debug_println(adc_distance);
     debug_print("Battery: ");
     debug_println(getBatteryLevel());
 
-    appDataSize = 3; // Size of data being sent
+    appDataSize = 2; // Size of data being sent
     appData[0] = battery;
-    appData[1] = distance & 0xFF;        // Lower byte of distance
-    appData[2] = (distance >> 8) & 0xFF; // Upper byte of distance
-
+    appData[1] = adc_distance;        // Lower byte of distance
+    
 
     debug_println(appData[0]);
 }
@@ -140,8 +137,11 @@ void loraLoopHandler()
     case DEVICE_STATE_SEND: // preparesTXpayload and sends it
     {
         prepareTxFrame(appPort);
+        if(lorawan_send){
         LoRaWAN.send();
         debug_println("Package send ");
+        }
+        
         deviceState = DEVICE_STATE_CYCLE;
         break;
     }

@@ -2,6 +2,7 @@
 
 uint8_t getBatteryLevel();
 
+
 #define DEBUG // Herauskommentieren, wenn keine serielle Ausgabe erwünscht wird
 
 #ifdef DEBUG
@@ -30,7 +31,8 @@ const float REF_VOLTAGE = 3.3; // Reference voltage
 const float MAX_DISTANCE = 50.0; // Maximum distance in mm
 
 bool initLinearSensor();
-uint16_t readLinearSensor();
+int16_t readLinearSensor();
+uint8_t readLinearSensor_8();
 //uint16_t distance;
 
 
